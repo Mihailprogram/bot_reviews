@@ -106,7 +106,7 @@ class UserTask(models.Model):
 
     STATUS_CHOICES = (
         ("taken", "Взято"),
-        ("submitted", "Отправлено"),
+        ("submitted", "На проверке"),
         ("approved", "Одобрено"),
         ("rejected", "Отклонено"),
     )

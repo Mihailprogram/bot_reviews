@@ -13,10 +13,10 @@ def tasks_list_keyboard(tasks):
             InlineKeyboardButton(
                 text=(
                     f"📝 {task.title} — "
-                    f"{task.reward} ₽"
+                    f"{task.reward} ₽Z"
                 ),
                 callback_data=(
-                    f"show_task:{task.id}"
+                    f"task_assignment:{task.id}"
                 ),
             )
         )

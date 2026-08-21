@@ -121,9 +121,7 @@ async def complete_task(
         telegram_id=telegram_id,
         task_id=task_id,
     )
-    print(user_task)
-    print(telegram_id)
-    print(task_id)
+
     if user_task is None:
         return False, "Вы не брали это задание."
 
@@ -150,6 +148,7 @@ async def complete_task(
         return False, "Не удалось отправить задание на проверку."
 
     return True, "Задание отправлено на проверку."
+
 
 @sync_to_async
 def get_task(task_id: int) -> Optional[Task]:
@@ -254,7 +253,7 @@ def take_task(
             status="taken",
         )
 
-        task.completions += 1
+        # task.completions += 1
         task.save(
             update_fields=["completions"],
         )
@@ -278,6 +277,49 @@ def get_user_tasks(
         )
         .select_related("task")
         .order_by("-created_at")
+    )
+
+@sync_to_async
+def get_check_tasks(
+    telegram_id: int,
+) -> list[UserTask]:
+    return list(
+            UserTask.objects.filter(
+                user__telegram_id=telegram_id,
+                status="submitted"
+            )
+            .select_related("task")
+            .order_by("-created_at")
+        )
+
+
+async def get_approved_tasks_balance(
+    telegram_id: int,
+) -> int:
+    user_tasks = await sync_to_async(list)(
+        UserTask.objects.filter(
+            user__telegram_id=telegram_id,
+            status="approved",
+        )
+        .select_related("task")
+        .order_by("-created_at")
+    )
+
+    total_reward = sum(
+        user_task.task.reward
+        for user_task in user_tasks
+    )
+    return total_reward
+
+
+@sync_to_async
+def update_task_completions(
+    task_id: int
+) -> None:
+    Task.objects.filter(
+        id=task_id
+    ).update(
+        completions=models.F("completions") + 1
     )
 
 

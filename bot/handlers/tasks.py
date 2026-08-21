@@ -9,7 +9,7 @@ from aiogram.types import InlineKeyboardButton
 
 from bot.models import Task
 from bot.keyboards.tasks import tasks_list_keyboard, task_taken_keyboard
-from bot.services.tasks import get_available_tasks
+from bot.services.tasks import get_available_tasks, update_task_completions
 from bot.keyboards.main import main_keyboard
 from bot.services.tasks import take_task, get_task, complete_task
 from bot.states import TaskStates
@@ -35,13 +35,29 @@ async def main_menu_callback(callback: CallbackQuery) -> None:
 
     await callback.answer()
 
-    # await callback.message.edit_text(
-    #     "🏠 Главное меню\n\n"
-    #     "Выберите нужный раздел:",
-    #     reply_markup=main_keyboard(),
-    # )
+@router.callback_query(F.data == "tasks")
+async def back_to_tasks(callback: CallbackQuery):
+    tasks = await get_available_tasks()
 
-# @router.callback_query(F.data == "tasks")
+    if not tasks:
+        await callback.message.edit_text(
+            "😔 Сейчас доступных заданий нет."
+        )
+        await callback.answer()
+        return
+
+    text = (
+        "📋 Доступные задания\n\n"
+        "Выберите задание:"
+    )
+
+    await callback.message.edit_text(
+        text,
+        reply_markup=tasks_list_keyboard(tasks),
+    )
+
+    await callback.answer()
+
 @router.message(F.text == "📋 Задания")
 async def show_tasks(
     # callback: CallbackQuery
@@ -58,7 +74,7 @@ async def show_tasks(
             reply_markup=builder.as_markup()
         )
 
-        await message.answer()
+        # await message.answer()
         return
 
     text = (
@@ -71,7 +87,33 @@ async def show_tasks(
         reply_markup=tasks_list_keyboard(tasks),
     )
 
-    # await message.answer()
+
+
+# Инлайн Кнопки заданий 
+@router.callback_query(F.data.startswith("task_assignment:"))
+async def task_assignment(callback: CallbackQuery):
+
+    task_id = int(callback.data.split(":")[1])
+
+    builder = InlineKeyboardBuilder()
+
+    task = await get_task(task_id)
+    builder.row(
+            InlineKeyboardButton(
+                text="Взять задание",
+                callback_data=f"show_task:{task.id}",
+            )
+        )
+    builder.row(
+            InlineKeyboardButton(
+                text="⬅️ Назад",
+                callback_data="tasks",
+            )
+        )
+    await callback.message.edit_text(
+            "Подтвердите выбор",
+            reply_markup=builder.as_markup(),
+        )
 
 
 @router.callback_query(F.data.startswith("show_task:"))
@@ -79,7 +121,7 @@ async def show_task(callback: CallbackQuery):
     """Показывает выбранное задание."""
 
     task_id = int(callback.data.split(":")[1])
-
+    print("task_id---",task_id)
     await take_task(telegram_id=callback.from_user.id,
             task_id=task_id,)
 
@@ -108,12 +150,6 @@ async def show_task(callback: CallbackQuery):
         )
     )
 
-    # builder.row(
-    #     InlineKeyboardButton(
-    #         text="🏠 Главное меню",
-    #         callback_data="main_menu",
-    #     )
-    # )
 
     text = (
         f"📝 {task.title}\n\n"
@@ -137,14 +173,15 @@ async def complete_task_start(callback: CallbackQuery, state: FSMContext):
 
     await state.update_data(task_id=task_id)
     await state.set_state(TaskStates.waiting_review_url)
+    await update_task_completions(task_id)
 
     await callback.message.answer(
         "🔗 Отправьте ссылку на ваш отзыв:"
     )
 
     await callback.answer()
-
-    await callback.answer("✅ Задание выполнено!")
+    print("ИИИ")
+    # await callback.answer("✅ Задание выполнено!")
 
 
 @router.message(TaskStates.waiting_review_url)
@@ -167,20 +204,18 @@ async def process_review_url(
     
     builder = InlineKeyboardBuilder()
 
-    builder.row(
-        InlineKeyboardButton(
-            text="🏠 Главное меню",
-            callback_data="main_menu",
-        )
-    )
+    # builder.row(
+    #     InlineKeyboardButton(
+    #         text="🏠 Главное меню",
+    #         callback_data="main_menu",
+    #     )
+    # )
 
+    await state.clear()
     await message.answer(
         text,
         reply_markup=builder.as_markup(),
     )
-
-    if success:
-        await state.clear()
 
 
 

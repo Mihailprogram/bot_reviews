@@ -38,11 +38,14 @@ def main_keyboard():
         [
             KeyboardButton(text="📋 Задания"),
         ],
-        [
-            KeyboardButton(text="📌 Мои задания"),
-        ],
+        # [
+        #     KeyboardButton(text="📌 Мои задания"),
+        # ],
         [
             KeyboardButton(text="💰 Баланс"),
+        ],
+        [
+            KeyboardButton(text="👤 Личный кабинет"),
         ],
     ]
 

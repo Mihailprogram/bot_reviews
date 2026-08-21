@@ -39,10 +39,6 @@ async def set_commands(bot: Bot) -> None:
             description="Мои задания",
         ),
         BotCommand(
-            command="profile",
-            description="Мой профиль",
-        ),
-        BotCommand(
             command="balance",
             description="Мой баланс",
         ),

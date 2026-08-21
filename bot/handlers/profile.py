@@ -5,7 +5,7 @@ from asgiref.sync import sync_to_async
 
 from bot.models import TelegramUser
 
-from bot.services.tasks import get_user_tasks, complete_task
+from bot.services.tasks import get_approved_tasks_balance, get_check_tasks, get_user_by_telegram_id, get_user_tasks
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton
 
@@ -27,7 +27,6 @@ def get_balance(telegram_id: int):
     return user.balance
 
 
-# @router.callback_query(F.data == "balance")
 @router.message(F.text == "💰 Баланс")
 async def balance_handler(
     # callback: CallbackQuery,
@@ -61,10 +60,8 @@ async def balance_handler(
 
         reply_markup=builder.as_markup(),
     )
-    await message.answer()
 
 
-# @router.callback_query(F.data == "my_tasks")
 @router.message(F.text == "📌 Мои задания")
 async def my_tasks_handler(
     # callback: CallbackQuery,
@@ -119,6 +116,41 @@ async def my_tasks_handler(
         reply_markup=builder.as_markup(),
     )
 
-    await message.answer()
+    # await message.answer()
 
     
+
+@router.message(F.text == "👤 Личный кабинет")
+async def my_profile(
+    # callback: CallbackQuery,
+    message: Message
+):
+    user = await get_user_by_telegram_id(message.from_user.id)
+
+    user_tasks = await get_user_tasks(message.from_user.id)
+
+    check_tasks = await get_check_tasks(message.from_user.id)
+
+    balance_all = await get_approved_tasks_balance(message.from_user.id)
+
+    if not user:
+        await message.answer(
+            "❌ Пользователь не найден."
+        )
+        return
+
+    text = (
+        f"🆔 **Ваш ID:** {user.telegram_id}\n"
+        f"⚜️ **Ваш логин:** {user.username}\n"
+        f"🏙 **Ваш город:** \n"
+        f"💫 **Ваш статус:** 👤 \n"
+        f"⏳ **Заданий на проверке: {len(check_tasks)}** \n\n"
+        f"⏳ **Всего заданий:** {len(user_tasks)} \n\n"
+        f"💰 **Текущий баланс:** {user.balance:.2f} ₽\n\n"
+        f"💰 **Заработано за все время:** {balance_all:.2f} ₽"
+
+    )
+
+    await message.answer(
+        text,
+    )
