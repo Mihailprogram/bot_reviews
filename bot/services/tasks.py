@@ -47,18 +47,24 @@ def get_or_create_user(
     return user
 
 
+
 @sync_to_async
-def get_available_tasks() -> list[Task]:
-    """Возвращает доступные задания."""
+def get_available_tasks(telegram_id: int) -> list[Task]:
+    """Возвращает доступные задания для пользователя."""
 
     now = timezone.now()
+
+    taken_task_ids = UserTask.objects.filter(
+        user__telegram_id=telegram_id,
+    ).values("task_id")
 
     return list(
         Task.objects.filter(
             is_active=True,
-            completions__lt=models.F(
-                "max_completions"
-            ),
+            completions__lt=models.F("max_completions"),
+        )
+        .exclude(
+            id__in=taken_task_ids,
         )
         .filter(
             models.Q(expires_at__isnull=True)

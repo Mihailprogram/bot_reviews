@@ -13,9 +13,24 @@ class Task(models.Model):
         verbose_name="Описание",
     )
 
+    description2 = models.TextField(
+            verbose_name="Описание2",
+        )
+
     platform = models.CharField(
         max_length=100,
         verbose_name="Площадка",
+    )
+
+    city = models.CharField(
+            max_length=100,
+            verbose_name="Город",
+    )
+
+    
+    sphera = models.CharField(
+            max_length=100,
+            verbose_name="Сфера",
     )
 
     url = models.URLField(
@@ -68,7 +83,6 @@ class Task(models.Model):
             self.is_active
             and self.completions < self.max_completions
         )
-
 
 class TelegramUser(models.Model):
     telegram_id = models.BigIntegerField(
